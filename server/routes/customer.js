@@ -156,7 +156,7 @@ router.put("/my-account", async (req, res) => {
     );
     if (!customer) return res.send("Customer doesnot exist.");
 
-    res.json({ customer });
+    res.send(customer);
   } catch (error) {
     console.log("Error occured here \n", error);
     res.send("Something went wrong.");
@@ -189,7 +189,7 @@ router.put("/changePassword", async (req, res) => {
       message:`User ${customer.name} changed ${customer.gender === 'male'?"his":"her"} password`,
       createdOn:new Date()
     })
-    res.json({ customer, message: "Password Updated." });
+    res.json({ customer, message: "Password Updated Successfully !" });
   } catch (error) {
     console.log("Error occured here \n", error);
     res.send("Something went wrong.");
@@ -204,17 +204,19 @@ router.post("/forgot-password", async (req, res) => {
     }).exec();
     if (!customer) return res.send("No user with this email.");
 
-    var token = "";
+   /* var token = "";
     crypto.randomBytes(20, (err, buffer) => {
-      token = buffer.toString("hex");
-      console.log(token);
-    });
-
-    customer.resetToken = token;
+      customer.resetToken = buffer.toString("hex");
+      
+    });*/
+  
+    // = token;
+    customer.resetToken=new Date().toString()+customer._id;
     customer.resetTokenValidity = Date.now() + 15 * 60 * 1000; // <-- 15 mins
 
     customer = await customer.save();
-    res.send("Email sent to " + req.body.email);
+    console.log(customer);
+    res.send(`Email sent to ${req.body.email}`);
   } catch (error) {
     console.log("Error occured here \n", error);
     res.send("Something went wrong.");
@@ -224,13 +226,21 @@ router.post("/forgot-password", async (req, res) => {
 // * Forgot password ( Enter new password )
 router.post("/forgot_password/:token", async (req, res) => {
   try {
-    if ((req.body, newPassword.trim() !== req.body.confirmPassword.trim())) {
+    if ((req.body.newPassword.trim() !== req.body.confirmPassword.trim())) {
       return res.send("Passwords do not match.");
     }
-    var customer = await Customer.findOne({
-      resetToken: req.params.token.trim(),
+    console.log(req.params.token);
+    /*var customer = await Customer.findOne({
+      resetToken: req.params.token,
       resetTokenValidity: { $gt: Date.now() },
+    }).exec();*/
+    var customer=await Customer.findOne({
+      $and:[
+        {resetToken:req.params.token},
+        {resetTokenValidity:{$gte: new Date()}}
+      ]
     }).exec();
+
     if (!customer) return res.send("Reset link is invalid.");
 
     var salt = await bcrypt.genSalt(10);

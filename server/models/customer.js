@@ -35,6 +35,7 @@ const customerSchema = new mongoose.Schema({
     enum: ["admin", "merchant", "outlet", "customer"],
     default: "customer",
   },
+  credit:Number,
   createdOn: String,
   createdOrg: Date,
   updatedOn: String,
